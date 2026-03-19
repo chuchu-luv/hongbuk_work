@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>홍북초등학교 스마트 복무 현황판</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    @font-face {
+        font-family: 'NanumBarunPen';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/NanumBarunpen.woff') format('woff');
+        font-weight: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'NexonMaplestory';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/MaplestoryOTFLight.woff') format('woff');
+        font-weight: 300;
+        font-display: swap;
+    }
+
+    body { font-family: 'NanumBarunPen', sans-serif; }
+    .font-maple { font-family: 'NexonMaplestory', sans-serif; }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #f9a8d4; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f472b6; }
+    
+    .view-hidden { display: none !important; }
+    .sticky-col { position: sticky; left: 0; z-index: 40; background-color: white; border-right: 1px solid #fce7f3; }
+    .sticky-header { position: sticky; top: 0; z-index: 50; background-color: #fff7fb; }
+    .soft-card { box-shadow: 0 10px 30px rgba(244,114,182,0.08); }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-rose-50 via-pink-50 to-violet-50 text-slate-800 h-screen flex flex-col overflow-hidden relative">
+
+  <!-- ========================================== -->
+  <!-- 1. 메인 랜딩 포털 -->
+  <!-- ========================================== -->
+  <div id="view-landing" class="h-screen flex items-center justify-center p-4 absolute inset-0 z-[100] bg-white/70 backdrop-blur-md">
+    <div class="max-w-4xl w-full">
+      <div class="text-center mb-12">
+        <h1 class="text-4xl md:text-6xl font-black text-rose-400 tracking-tight mb-4 drop-shadow-sm">스마트 복무 포털</h1>
+        <p class="text-rose-300 font-bold text-lg">원하시는 메뉴를 선택해 주세요.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div onclick="switchView('view-teacher')" class="bg-white rounded-[2rem] p-10 cursor-pointer transform transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-900/50 group border border-rose-100 soft-card">
+          <div class="w-20 h-20 bg-rose-50 text-rose-400 rounded-3xl flex items-center justify-center mb-6 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+            <i data-lucide="file-edit" class="w-10 h-10"></i>
+          </div>
+          <h2 class="text-2xl font-black text-slate-800 mb-2">교직원 복무 등록</h2>
+          <p class="text-slate-500 font-medium text-sm">연가, 조퇴, 출장 등 당일 복무 사항을<br>스프레드시트에 직접 제출합니다.</p>
+        </div>
+
+        <div class="bg-white rounded-[2rem] p-10 flex flex-col justify-between transform transition-all hover:shadow-2xl border border-rose-100 soft-card">
+          <div>
+            <div class="w-20 h-20 bg-violet-50 text-violet-400 rounded-3xl flex items-center justify-center mb-6">
+              <i data-lucide="layout-dashboard" class="w-10 h-10"></i>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">복무 현황판</h2>
+            <p class="text-slate-500 font-medium text-sm mb-6">전체 교직원의 실시간 근무 현황을 파악합니다.</p>
+          </div>
+          
+          <form id="login-form" class="mt-auto relative">
+            <input type="password" id="admin-pw" placeholder="관리자 비밀번호" class="w-full w-full bg-rose-50 border border-rose-200 p-4 rounded-2xl outline-none focus:border-rose-300 font-bold tracking-[0.3em] text-center" required>
+            <button type="submit" class="w-full mt-3 bg-rose-300 text-white font-bold py-4 rounded-2xl hover:bg-rose-400 transition-colors shadow-lg shadow-rose-100">
+              현황판 열기
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. 일반 교사 입력 화면 -->
+  <!-- ========================================== -->
+  <div id="view-teacher" class="h-screen py-10 px-4 view-hidden bg-gradient-to-br from-rose-50 via-pink-50 to-violet-50 absolute inset-0 z-[90] overflow-y-auto">
+    <div class="max-w-2xl mx-auto">
+      <button onclick="switchView('view-landing')" class="flex items-center gap-2 text-slate-500 font-bold mb-6 hover:text-rose-400 transition-colors">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i> 처음으로 돌아가기
+      </button>
+
+      <div class="bg-white rounded-[2rem] p-8 md:p-10 shadow-xl shadow-rose-100/50 border border-rose-100 soft-card">
+        <h2 class="text-3xl font-black text-slate-800 mb-2">복무 사항 입력</h2>
+        <p class="text-slate-500 mb-8 font-medium">제출된 내역은 즉시 현황판에 반영됩니다.<br><span class="text-rose-400">※ 시간을 비워두면 자동으로 '종일' 처리됩니다.</span></p>
+        
+        <form id="teacher-form" class="space-y-6">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">성명</label>
+              <input type="text" id="t-name" required placeholder="예: 홍길동" class="w-full p-4 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-bold text-slate-800">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">소속 / 직위</label>
+              <input type="text" id="t-dept" placeholder="예: 1학년 2반 교사" class="w-full p-4 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-bold text-slate-800">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">복무 날짜</label>
+              <input type="date" id="t-date" required class="w-full p-4 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-bold text-slate-800">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">복무 종류</label>
+              <select id="t-type" class="w-full p-4 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-bold text-slate-800">
+                <option value="관내출장">관내출장</option><option value="관외출장">관외출장</option>
+                <option value="학습연수">학습연수</option><option value="41조연수">41조연수</option>
+                <option value="조퇴">조퇴</option><option value="외출">외출</option><option value="지각">지각</option>
+                <option value="연가">연가</option><option value="병가">병가</option><option value="공가">공가</option>
+                <option value="특별휴가">특별휴가</option><option value="육아시간">육아시간</option><option value="모성보호시간">모성보호시간</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">시작 시간</label>
+              <div class="flex gap-2">
+                <select id="t-start-h" class="w-full p-3.5 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                  <option value="">- 시 -</option>
+                  <option value="08">08시</option><option value="09">09시</option><option value="10">10시</option>
+                  <option value="11">11시</option><option value="12">12시</option><option value="13">13시</option>
+                  <option value="14">14시</option><option value="15">15시</option><option value="16">16시</option>
+                </select>
+                <select id="t-start-m" class="w-full p-3.5 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                  <option value="">- 분 -</option>
+                  <option value="00">00분</option><option value="10">10분</option><option value="20">20분</option>
+                  <option value="30">30분</option><option value="40">40분</option><option value="50">50분</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">종료 시간</label>
+              <div class="flex gap-2">
+                <select id="t-end-h" class="w-full p-3.5 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                  <option value="">- 시 -</option>
+                  <option value="08">08시</option><option value="09">09시</option><option value="10">10시</option>
+                  <option value="11">11시</option><option value="12">12시</option><option value="13">13시</option>
+                  <option value="14">14시</option><option value="15">15시</option><option value="16">16시</option>
+                </select>
+                <select id="t-end-m" class="w-full p-3.5 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                  <option value="">- 분 -</option>
+                  <option value="00">00분</option><option value="10">10분</option><option value="20">20분</option>
+                  <option value="30">30분</option><option value="40">40분</option><option value="50">50분</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">상세 사유 / 행선지 (선택)</label>
+            <input type="text" id="t-reason" placeholder="목적지나 사유를 입력하세요" class="w-full p-4 rounded-xl bg-rose-50/50 border border-rose-100 outline-none focus:border-rose-300 font-medium">
+          </div>
+
+          <button type="submit" id="btn-submit-teacher" class="w-full bg-rose-300 text-white font-black text-lg py-5 rounded-xl shadow-lg shadow-rose-100 hover:bg-rose-400 active:scale-[0.98] transition-all flex justify-center items-center gap-2 mt-4">
+            <i data-lucide="send" class="w-5 h-5"></i> 현황판에 전송하기
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. 관리자 타임라인 대시보드 -->
+  <!-- ========================================== -->
+  <div id="view-dashboard" class="flex-1 flex flex-col view-hidden h-screen overflow-hidden relative">
+    
+    <header class="bg-gradient-to-r from-rose-300 to-pink-300 text-white shadow-md z-50 flex-shrink-0">
+      <div class="max-w-[1400px] mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i data-lucide="clock" class="w-6 h-6 text-pink-200"></i>
+          <h1 class="text-lg md:text-xl font-bold tracking-tight">홍북초등학교 근무 현황판</h1>
+        </div>
+        <div class="flex items-center gap-2 md:gap-4">
+          <button onclick="document.getElementById('file-upload').click()" class="bg-rose-500 hover:bg-rose-400 px-3 md:px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 shadow" title="나이스 엑셀 업로드">
+            <i data-lucide="upload" class="w-4 h-4"></i> <span class="hidden md:inline">엑셀 업로드</span>
+            <input type="file" accept=".csv, .xlsx, .xls" id="file-upload" class="hidden">
+          </button>
+          
+          <div id="file-info" class="hidden bg-white text-rose-400 px-3 py-1.5 rounded-lg flex items-center gap-2 font-bold text-sm shadow-lg animate-pulse">
+            <span id="file-count">0</span>건 대기중
+            <button id="btn-sync-file" class="bg-rose-300 text-white px-3 py-1 rounded hover:bg-rose-400 transition-colors ml-2">
+              ☁️ 현황판에 반영
+            </button>
+          </div>
+
+          <button onclick="deleteFileRecords()" id="btn-reset-excel" class="bg-white/20 hover:bg-white/30 text-white px-3 md:px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 shadow" title="오늘 등록된 엑셀 데이터 일괄 삭제">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> <span class="hidden md:inline">엑셀 리셋</span>
+          </button>
+          <button onclick="fetchGASData()" class="bg-white text-rose-400 px-3 md:px-4 py-2 rounded-lg font-bold text-sm hover:bg-rose-50 transition-colors flex items-center gap-2 shadow">
+            <i data-lucide="refresh-cw" id="icon-refresh" class="w-4 h-4"></i> <span class="hidden md:inline">동기화</span>
+          </button>
+          <button onclick="logoutAdmin()" class="text-rose-50 hover:text-white p-2 transition-colors" title="로그아웃">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-hidden flex flex-col p-4 md:p-6 max-w-[1400px] w-full mx-auto gap-4 relative">
+      
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0">
+        <div class="grid grid-cols-4 gap-3 w-full md:w-auto">
+          <!-- 현재근무 (카드 클릭 버튼 정상작동) -->
+          <div id="card-normal" onclick="toggleFilter('normal')" class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-emerald-100 border-l-4 border-l-emerald-500 cursor-pointer hover:shadow-md transition-all select-none">
+            <p class="text-slate-500 text-[10px] font-bold mb-1 flex items-center gap-1"><i data-lucide="user-check" class="w-3 h-3 text-emerald-500"></i> 현재 근무</p>
+            <div class="flex items-baseline gap-1"><p id="stat-normal" class="text-xl md:text-2xl font-black text-emerald-700 tabular-nums">0</p><span class="text-xs text-slate-400">명</span></div>
+          </div>
+          <div id="card-trip" onclick="toggleFilter('trip')" class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-blue-100 border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md transition-all select-none">
+            <p class="text-slate-500 text-[10px] font-bold mb-1 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3 text-blue-500"></i> 출장</p>
+            <div class="flex items-baseline gap-1"><p id="stat-trip" class="text-xl md:text-2xl font-black text-blue-700 tabular-nums">0</p><span class="text-xs text-slate-400">명</span></div>
+          </div>
+          <div id="card-leave" onclick="toggleFilter('leave')" class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-rose-100 border-l-4 border-l-rose-500 cursor-pointer hover:shadow-md transition-all select-none">
+            <p class="text-slate-500 text-[10px] font-bold mb-1 flex items-center gap-1 whitespace-nowrap"><i data-lucide="coffee" class="w-3 h-3 text-rose-500"></i> 조퇴/휴가 등</p>
+            <div class="flex items-baseline gap-1"><p id="stat-leave" class="text-xl md:text-2xl font-black text-rose-700 tabular-nums">0</p><span class="text-xs text-slate-400">명</span></div>
+          </div>
+          <div id="card-training" onclick="toggleFilter('training')" class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-purple-100 border-l-4 border-l-purple-500 cursor-pointer hover:shadow-md transition-all select-none">
+            <p class="text-slate-500 text-[10px] font-bold mb-1 flex items-center gap-1"><i data-lucide="book-open" class="w-3 h-3 text-purple-500"></i> 연수</p>
+            <div class="flex items-baseline gap-1"><p id="stat-training" class="text-xl md:text-2xl font-black text-purple-700 tabular-nums">0</p><span class="text-xs text-slate-400">명</span></div>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-end min-w-max bg-white p-3 md:p-4 rounded-xl shadow-sm border border-rose-100">
+          <div class="flex items-center gap-1 mb-1">
+            <span class="text-[10px] font-bold text-rose-400 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">테스트 설정</span>
+            <input type="date" id="test-date-input" onchange="onTestChange()" class="text-xs p-0.5 rounded border border-rose-100 outline-none text-slate-600 font-mono bg-white h-6">
+            <select id="test-time-select" onchange="onTestChange()" class="text-xs p-0.5 rounded border border-rose-100 outline-none text-slate-600 font-mono bg-white h-6">
+              <option value="">- 시간 -</option>
+            </select>
+            <button onclick="resetTest()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-600 px-1.5 py-0.5 h-6 rounded transition-colors">초기화</button>
+          </div>
+          <div id="clock-date" class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">YYYY-MM-DD</div>
+          <div id="clock-time" class="text-3xl font-maple font-black text-rose-400 tracking-tighter leading-none mt-1 drop-shadow-sm">00:00:00</div>
+        </div>
+      </div>
+
+      <div class="text-[11px] text-rose-400 font-bold px-2 flex gap-4 flex-shrink-0 drop-shadow-sm">
+        <span><i data-lucide="info" class="w-3 h-3 inline pb-0.5"></i> 카드를 클릭하여 분류할 수 있습니다. (전체 교직원: <span id="label-total-teachers">76</span>명) / 시간 미지정자는 종일로 자동 간주됩니다.</span>
+      </div>
+
+      <!-- Gantt 차트 타임라인 -->
+      <div class="bg-white rounded-xl shadow-sm border border-rose-100 flex-1 flex flex-col overflow-hidden relative soft-card">
+        <div class="flex border-b border-rose-100 bg-white sticky-header h-10 flex-shrink-0 w-full overflow-hidden">
+          <div class="w-28 md:w-36 flex-shrink-0 border-r border-rose-100 bg-white flex items-center justify-center font-black text-rose-400 text-sm z-50 shadow-[2px_0_5px_rgba(0,0,0,0.03)]">
+            성명 / 소속
+          </div>
+          <div class="flex-1 relative overflow-hidden" id="timeline-header-scroll">
+            <div class="absolute inset-0 min-w-[700px]">
+              <div class="absolute left-1 bottom-1 text-[10px] font-black text-rose-400">08:40</div>
+              <div class="absolute right-1 bottom-1 text-[10px] font-black text-rose-400">16:40</div>
+              <div id="timeline-time-labels"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto overflow-x-auto relative bg-transparent" id="timeline-body-scroll" onscroll="syncScroll()">
+          <div class="flex flex-col min-w-[700px] md:min-w-full w-fit relative min-h-full">
+            <div id="timeline-bg-grid" class="absolute top-0 bottom-0 right-0 pointer-events-none z-0" style="left: 7rem;"></div>
+            <div id="current-time-line" class="absolute top-0 bottom-0 w-[2px] bg-rose-400 shadow-[0_0_10px_rgba(251,113,133,0.9)] z-20 hidden transition-all duration-1000" style="left: 0;">
+              <div class="absolute top-1 -translate-x-1/2 bg-rose-400 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm font-bold">NOW</div>
+            </div>
+            <div id="timeline-rows-container" class="flex flex-col relative z-10 w-full pb-6"></div>
+            <div id="empty-state" class="text-center pt-32 text-slate-400 font-medium hidden w-full">조건에 맞는 현황 데이터가 없습니다.</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+
+  <div id="edit-modal" class="fixed inset-0 bg-slate-900/35 backdrop-blur-sm z-[1100] hidden items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-white rounded-[2rem] p-6 md:p-8 border border-rose-100 soft-card">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="text-2xl font-black text-slate-800">수기 입력 수정</h3>
+          <p class="text-sm text-slate-500">대시보드에서 바로 수정 후 저장할 수 있습니다.</p>
+        </div>
+        <button onclick="closeEditModal()" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
+          <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+        </button>
+      </div>
+
+      <form id="edit-manual-form" class="space-y-5">
+        <input type="hidden" id="e-record-id">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">성명</label>
+            <input type="text" id="e-name" required class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">소속 / 직위</label>
+            <input type="text" id="e-role" class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">복무 날짜</label>
+            <input type="date" id="e-date" required class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">복무 종류</label>
+            <select id="e-type" class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800">
+              <option value="관내출장">관내출장</option><option value="관외출장">관외출장</option>
+              <option value="학습연수">학습연수</option><option value="41조연수">41조연수</option>
+              <option value="조퇴">조퇴</option><option value="외출">외출</option><option value="지각">지각</option>
+              <option value="연가">연가</option><option value="병가">병가</option><option value="공가">공가</option>
+              <option value="특별휴가">특별휴가</option><option value="육아시간">육아시간</option><option value="모성보호시간">모성보호시간</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">시작 시간</label>
+            <div class="flex gap-2">
+              <select id="e-start-h" class="w-full p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                <option value="">- 시 -</option>
+                <option value="08">08시</option><option value="09">09시</option><option value="10">10시</option>
+                <option value="11">11시</option><option value="12">12시</option><option value="13">13시</option>
+                <option value="14">14시</option><option value="15">15시</option><option value="16">16시</option>
+              </select>
+              <select id="e-start-m" class="w-full p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                <option value="">- 분 -</option>
+                <option value="00">00분</option><option value="10">10분</option><option value="20">20분</option>
+                <option value="30">30분</option><option value="40">40분</option><option value="50">50분</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">종료 시간</label>
+            <div class="flex gap-2">
+              <select id="e-end-h" class="w-full p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                <option value="">- 시 -</option>
+                <option value="08">08시</option><option value="09">09시</option><option value="10">10시</option>
+                <option value="11">11시</option><option value="12">12시</option><option value="13">13시</option>
+                <option value="14">14시</option><option value="15">15시</option><option value="16">16시</option>
+              </select>
+              <select id="e-end-m" class="w-full p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                <option value="">- 분 -</option>
+                <option value="00">00분</option><option value="10">10분</option><option value="20">20분</option>
+                <option value="30">30분</option><option value="40">40분</option><option value="50">50분</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">상세 사유 / 행선지</label>
+          <input type="text" id="e-note" class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-medium">
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black py-4 rounded-xl transition-colors">취소</button>
+          <button type="submit" id="btn-save-edit" class="flex-1 bg-rose-300 hover:bg-rose-400 text-white font-black py-4 rounded-xl transition-colors">수정 저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 💡 잘림 절대 불가! 마우스 포인터를 따라다니는 초소형 글로벌 툴팁 💡 -->
+  <div id="global-tooltip" class="fixed pointer-events-none z-[9999] opacity-0 transition-opacity duration-100 bg-slate-800 text-white text-[11px] px-2.5 py-1.5 rounded shadow-xl flex items-center gap-1.5 border border-slate-700 whitespace-nowrap transform -translate-x-1/2 -translate-y-full mt-[-10px]">
+    <span id="tt-name" class="font-bold text-pink-300"></span>
+    <span class="text-slate-500">|</span>
+    <span id="tt-time" class="font-mono font-bold text-pink-50"></span>
+  </div>
+
+  <!-- 토스트 알림창 -->
+  <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-32 opacity-0 z-[1000]">
+    <i data-lucide="check-circle-2" class="text-rose-300 w-5 h-5"></i>
+    <span id="toast-msg" class="font-bold text-sm tracking-tight">알림 메시지</span>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwmIItRAFat0Uwsbw9nxIULguNrBQ4Xy7p4PyLxqXEZ5VRPkHKVngIchCw4doJQKaxr/exec';
+    const START_MINS = 520;
+    const END_MINS = 1000;
+    const TOTAL_MINS = 480;
+    const TOTAL_TEACHERS = 76;
+
+    let todayRecords = [];
+    let parsedFileData = [];
+    let currentFilter = 'all';
+    let isTestMode = false;
+    let adminToken = sessionStorage.getItem('hb_admin_token') || '';
+
+    function getRealTodayString() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    }
+    let currentActiveDateString = getRealTodayString();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('t-date').value = currentActiveDateString;
+      const totalEl = document.getElementById('label-total-teachers');
+      if (totalEl) totalEl.innerText = TOTAL_TEACHERS;
+      lucide.createIcons();
+    });
+
+    const views = {
+      landing: document.getElementById('view-landing'),
+      teacher: document.getElementById('view-teacher'),
+      dashboard: document.getElementById('view-dashboard')
+    };
+
+    function safeStr(val) {
+      return typeof val === 'string' ? val : (val ? String(val) : '');
+    }
+
+    function syncScroll() {
+      const bodyScroll = document.getElementById('timeline-body-scroll');
+      const headerScroll = document.getElementById('timeline-header-scroll');
+      headerScroll.scrollLeft = bodyScroll.scrollLeft;
+    }
+
+    function switchView(viewId) {
+      Object.values(views).forEach(v => v.classList.add('view-hidden'));
+      views[viewId.split('-')[1]].classList.remove('view-hidden');
+      if (viewId === 'view-dashboard') {
+        fetchGASData();
+        setTimeout(initGrid, 100);
+      }
+      lucide.createIcons();
+    }
+
+    async function adminLogin(password) {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'adminLogin', password })
+      });
+      return await res.json();
+    }
+
+    function logoutAdmin() {
+      adminToken = '';
+      sessionStorage.removeItem('hb_admin_token');
+      document.getElementById('admin-pw').value = '';
+      switchView('view-landing');
+      showToast('로그아웃되었습니다.');
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const result = await adminLogin(document.getElementById('admin-pw').value);
+        if (result.status === 'success' && result.token) {
+          adminToken = result.token;
+          sessionStorage.setItem('hb_admin_token', adminToken);
+          document.getElementById('admin-pw').value = '';
+          switchView('view-dashboard');
+        } else {
+          alert('비밀번호가 일치하지 않습니다.');
+        }
+      } catch (err) {
+        alert('관리자 인증 중 오류가 발생했습니다.');
+      }
+    });
+
+    let toastTimeout;
+    function showToast(msg) {
+      clearTimeout(toastTimeout);
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('translate-y-32', 'opacity-0');
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-32', 'opacity-0');
+      }, 3000);
+    }
+
+    function timeToMins(timeStr) {
+      if (!timeStr || timeStr.trim() === '') return START_MINS;
+      const parts = timeStr.split(':');
+      if (parts.length < 2) return START_MINS;
+      return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+
+    function getCategory(type) {
+      const t = safeStr(type);
+      if (t.includes('연수') || t.includes('41조')) return 'training';
+      if (t.includes('출장')) return 'trip';
+      return 'leave';
+    }
+
+    function extractTimesForToday(periodStr, todayStr, typeStr = '') {
+      if (!periodStr) return { start: '', end: '' };
+      const timeMatch = periodStr.match(/\d{2}:\d{2}/g);
+      if (!timeMatch || timeMatch.length < 2) return { start: '', end: '' };
+
+      const isDailyRepeat = periodStr.includes('일반복') || periodStr.includes('반복') || typeStr.includes('육아') || typeStr.includes('모성');
+      if (isDailyRepeat) return { start: timeMatch[0], end: timeMatch[timeMatch.length - 1] };
+
+      const dates = periodStr.match(/\d{4}[-./]\s*\d{1,2}[-./]\s*\d{1,2}/g);
+      if (!dates || dates.length < 2) return { start: timeMatch[0], end: timeMatch[timeMatch.length - 1] };
+
+      const normDates = dates.map(d => {
+        const parts = d.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+        if (parts) return `${parts[1]}-${parts[2].padStart(2,'0')}-${parts[3].padStart(2,'0')}`;
+        return '';
+      });
+
+      if (normDates[0] !== normDates[normDates.length - 1]) {
+        if (todayStr === normDates[0]) return { start: timeMatch[0], end: '16:40' };
+        if (todayStr === normDates[normDates.length - 1]) return { start: '08:40', end: timeMatch[timeMatch.length - 1] };
+        return { start: '08:40', end: '16:40' };
+      }
+
+      return { start: timeMatch[0], end: timeMatch[timeMatch.length - 1] };
+    }
+
+    function getProcessedRecords() {
+      const uniqueMap = new Map();
+      todayRecords.forEach(r => {
+        const key = `${safeStr(r['성명'] || r.name)}_${safeStr(r['근무상황'] || r.type)}_${safeStr(r['기간'] || r.period)}_${safeStr(r['레코드ID'] || r.recordId)}`;
+        if (!uniqueMap.has(key)) uniqueMap.set(key, r);
+      });
+
+      const distinctRecords = Array.from(uniqueMap.values());
+      const processed = [];
+      distinctRecords.forEach(r => {
+        const name = safeStr(r['성명'] || r.name);
+        const type = safeStr(r['근무상황'] || r.type);
+        const cat = getCategory(type);
+        const times = extractTimesForToday(r['기간'] || r.period, currentActiveDateString, type);
+        const isUntimed = !times.start && !times.end;
+
+        let sMins = times.start ? timeToMins(times.start) : START_MINS;
+        let eMins = times.end ? timeToMins(times.end) : END_MINS;
+        sMins = Math.max(START_MINS, Math.min(END_MINS, sMins));
+        eMins = Math.max(START_MINS, Math.min(END_MINS, eMins));
+        const duration = eMins - sMins;
+
+        if (duration > 0 || isUntimed) {
+          processed.push({
+            ...r,
+            _sMins: sMins,
+            _eMins: eMins,
+            _duration: duration,
+            _cat: cat,
+            _name: name,
+            _isUntimed: isUntimed,
+            _times: times,
+            _recordId: safeStr(r['레코드ID'] || r.recordId)
+          });
+        }
+      });
+      return processed;
+    }
+
+    function populateTestTimeDropdown() {
+      const select = document.getElementById('test-time-select');
+      for (let h = 8; h <= 16; h++) {
+        for (let m = 0; m < 60; m += 10) {
+          if (h === 8 && m < 40) continue;
+          if (h === 16 && m > 40) continue;
+          const hh = String(h).padStart(2, '0');
+          const mm = String(m).padStart(2, '0');
+          const opt = document.createElement('option');
+          opt.value = `${hh}:${mm}`;
+          opt.text = `${hh}:${mm}`;
+          select.appendChild(opt);
+        }
+      }
+    }
+
+    function initGrid() {
+      let labelsHtml = '';
+      let gridHtml = '';
+      for (let m = 9 * 60; m <= 16 * 60 + 30; m += 30) {
+        const percent = ((m - START_MINS) / TOTAL_MINS) * 100;
+        const h = String(Math.floor(m / 60)).padStart(2, '0');
+        const min = String(m % 60).padStart(2, '0');
+        if (min === '00') {
+          labelsHtml += `<div class="absolute bottom-0 -translate-x-1/2 text-[10px] font-bold text-rose-300" style="left: ${percent}%">${h}:${min}</div>`;
+          gridHtml += `<div class="absolute top-0 bottom-0 w-px bg-rose-100 z-0" style="left: ${percent}%"></div>`;
+        } else {
+          gridHtml += `<div class="absolute top-0 bottom-0 w-px border-l border-dashed border-rose-100 z-0" style="left: ${percent}%"></div>`;
+        }
+      }
+      document.getElementById('timeline-time-labels').innerHTML = labelsHtml;
+      document.getElementById('timeline-bg-grid').innerHTML = gridHtml;
+    }
+
+    function onTestChange() {
+      isTestMode = true;
+      const dateVal = document.getElementById('test-date-input').value;
+      if (dateVal && dateVal !== currentActiveDateString) {
+        currentActiveDateString = dateVal;
+        fetchGASData();
+      }
+      updateClock();
+    }
+
+    function resetTest() {
+      isTestMode = false;
+      document.getElementById('test-date-input').value = '';
+      document.getElementById('test-time-select').value = '';
+      const realToday = getRealTodayString();
+      if (currentActiveDateString !== realToday) {
+        currentActiveDateString = realToday;
+        fetchGASData();
+      }
+      updateClock();
+      showToast('테스트 모드 종료. 현재 시간으로 복귀했습니다.');
+    }
+
+    function getCurrentDateTime() {
+      if (isTestMode) {
+        const now = new Date();
+        const d = document.getElementById('test-date-input').value;
+        const tStr = document.getElementById('test-time-select').value;
+        if (d) {
+          const [yy, mm, dd] = d.split('-');
+          now.setFullYear(yy, mm - 1, dd);
+        }
+        if (tStr) {
+          const [hh, mm] = tStr.split(':');
+          now.setHours(parseInt(hh, 10), parseInt(mm, 10), 0, 0);
+        }
+        return now;
+      }
+      return new Date();
+    }
+
+    function updateClock() {
+      const now = getCurrentDateTime();
+      document.getElementById('clock-time').innerText = now.toLocaleTimeString('ko-KR', { hour12: false });
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      document.getElementById('clock-date').innerText = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} (${days[now.getDay()]})`;
+
+      if (!isTestMode && getRealTodayString() !== currentActiveDateString) {
+        currentActiveDateString = getRealTodayString();
+        showToast('자정이 지나 현황이 리셋되었습니다.');
+        fetchGASData();
+      }
+
+      const currentMins = now.getHours() * 60 + now.getMinutes();
+      const line = document.getElementById('current-time-line');
+      if (currentMins >= START_MINS && currentMins <= END_MINS) {
+        const percent = ((currentMins - START_MINS) / TOTAL_MINS) * 100;
+        line.style.left = `calc(7rem + (100% - 7rem) * ${percent / 100})`;
+        if (window.innerWidth >= 768) {
+          line.style.left = `calc(9rem + (100% - 9rem) * ${percent / 100})`;
+        }
+        line.classList.remove('hidden');
+      } else {
+        line.classList.add('hidden');
+      }
+      updateStats(currentMins);
+    }
+
+    window.toggleFilter = function(filterType) {
+      currentFilter = currentFilter === filterType ? 'all' : filterType;
+      updateFilterUI();
+      renderTimeline();
+    };
+
+    function updateFilterUI() {
+      const cards = ['normal', 'trip', 'leave', 'training'];
+      cards.forEach(c => {
+        const el = document.getElementById(`card-${c}`);
+        if (currentFilter === 'all' || currentFilter === c) {
+          el.classList.remove('opacity-40', 'bg-rose-50');
+          el.classList.add('bg-white');
+          if (currentFilter === c) el.classList.add('ring-2', 'ring-rose-200');
+          else el.classList.remove('ring-2', 'ring-rose-200');
+        } else {
+          el.classList.add('opacity-40', 'bg-rose-50');
+          el.classList.remove('bg-white', 'ring-2', 'ring-rose-200');
+        }
+      });
+    }
+
+    function updateStats(currentMins) {
+      if (!currentMins) {
+        const now = getCurrentDateTime();
+        currentMins = now.getHours() * 60 + now.getMinutes();
+      }
+
+      const records = getProcessedRecords();
+      const tripNames = new Set();
+      const leaveNames = new Set();
+      const trainingNames = new Set();
+      const absentNowNames = new Set();
+
+      records.forEach(r => {
+        if (r._cat === 'trip') tripNames.add(r._name);
+        else if (r._cat === 'leave') leaveNames.add(r._name);
+        else if (r._cat === 'training') trainingNames.add(r._name);
+
+        if (r._isUntimed || (currentMins >= r._sMins && currentMins < r._eMins)) {
+          absentNowNames.add(r._name);
+        }
+      });
+
+      document.getElementById('stat-normal').innerText = TOTAL_TEACHERS - absentNowNames.size;
+      document.getElementById('stat-trip').innerText = tripNames.size;
+      document.getElementById('stat-leave').innerText = leaveNames.size;
+      document.getElementById('stat-training').innerText = trainingNames.size;
+    }
+
+    window.showTooltip = function(e, el) {
+      const tt = document.getElementById('global-tooltip');
+      document.getElementById('tt-name').innerText = el.getAttribute('data-name');
+      document.getElementById('tt-time').innerText = el.getAttribute('data-time');
+      tt.style.left = e.clientX + 'px';
+      tt.style.top = (e.clientY - 15) + 'px';
+      tt.style.opacity = '1';
+      tt.style.visibility = 'visible';
+    };
+
+    window.hideTooltip = function() {
+      const tt = document.getElementById('global-tooltip');
+      tt.style.opacity = '0';
+      tt.style.visibility = 'hidden';
+    };
+
+    function isCoveringDate(periodStr, todayStr) {
+      if (!periodStr || periodStr.trim() === '' || periodStr.includes('종일')) return true;
+      const dates = periodStr.match(/\d{4}[-./]\s*\d{1,2}[-./]\s*\d{1,2}/g);
+      if (!dates) return periodStr.includes(todayStr);
+
+      const normDates = dates.map(d => {
+        const parts = d.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+        if (parts) return `${parts[1]}-${parts[2].padStart(2,'0')}-${parts[3].padStart(2,'0')}`;
+        return '';
+      });
+
+      if (normDates.length === 1) return normDates[0] === todayStr;
+      if (normDates.length >= 2) return todayStr >= normDates[0] && todayStr <= normDates[normDates.length - 1];
+      return periodStr.includes(todayStr);
+    }
+
+    function renderTimeline() {
+      const container = document.getElementById('timeline-rows-container');
+      const emptyState = document.getElementById('empty-state');
+      container.innerHTML = '';
+
+      if (currentFilter === 'normal') {
+        emptyState.innerText = '현재 근무자 명단은 타임라인에 표시되지 않습니다.';
+        emptyState.classList.remove('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      const records = getProcessedRecords();
+      const renderRecords = currentFilter === 'all' ? records : records.filter(r => r._cat === currentFilter);
+
+      if (renderRecords.length === 0) {
+        emptyState.innerText = '조건에 맞는 현황 데이터가 없습니다.';
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      const timedRecords = renderRecords.filter(r => !r._isUntimed).sort((a,b) => a._sMins - b._sMins);
+      const untimedRecords = renderRecords.filter(r => r._isUntimed).sort((a,b) => a._name.localeCompare(b._name));
+
+      const drawRow = (r) => {
+        const role = safeStr(r['직급/직위/직종'] || r.role || '교직원');
+        const type = safeStr(r['근무상황'] || r.type);
+        const note = safeStr(r['목적지/비고'] || r.note);
+        const source = safeStr(r['입력경로'] || r.source);
+        const recordId = safeStr(r['레코드ID'] || r.recordId);
+
+        const leftPos = ((r._sMins - START_MINS) / TOTAL_MINS) * 100;
+        const widthPct = Math.max(0.5, (r._duration / TOTAL_MINS) * 100);
+
+        let bgColor = 'bg-sky-300/30 border-sky-300 text-sky-900';
+        if (r._cat === 'leave') bgColor = 'bg-rose-300/25 border-rose-300 text-rose-900';
+        else if (r._cat === 'training') bgColor = 'bg-violet-300/25 border-violet-300 text-violet-900';
+
+        const actionBtns = source === '수기입력'
+          ? `<div class="absolute top-1 left-1 flex gap-1 z-50">
+               <button onclick="openEditModal('${recordId}')" class="text-slate-300 hover:text-sky-500 p-1" title="수정"><i data-lucide="pencil" class="w-3 h-3"></i></button>
+               <button onclick="deleteManualRecord('${recordId}')" class="text-slate-300 hover:text-rose-500 p-1" title="삭제"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+             </div>`
+          : '';
+
+        const displayLabel = note ? `${type} (${note})` : type;
+        const timeDisplay = r._isUntimed ? '종일' : `${r._times.start} ~ ${r._times.end}`;
+
+        return `
+          <div class="flex border-b border-rose-50 hover:bg-white/50 transition-colors h-11 relative w-full">
+            <div class="w-28 md:w-36 flex-shrink-0 border-r border-rose-100 bg-white flex flex-col justify-center items-center sticky-col shadow-[2px_0_5px_rgba(0,0,0,0.02)] z-30">
+              ${actionBtns}
+              <span class="font-black text-sm text-slate-800 truncate px-1 w-full text-center">${r._name}</span>
+              <span class="text-[9px] text-slate-400 font-bold truncate px-1 w-full text-center">${role}</span>
+            </div>
+            <div class="flex-1 relative min-w-[700px]">
+              <div class="absolute top-1.5 bottom-1.5 z-10 rounded-lg border flex items-center px-2 overflow-hidden whitespace-nowrap transition-all hover:shadow-md cursor-pointer ${bgColor}"
+                style="left: ${leftPos}%; width: ${widthPct}%;"
+                data-name="${r._name}"
+                data-time="${timeDisplay}"
+                onmousemove="showTooltip(event, this)"
+                onmouseleave="hideTooltip()">
+                <span class="text-[11px] font-bold truncate drop-shadow-sm pointer-events-none">${displayLabel}</span>
+              </div>
+            </div>
+          </div>`;
+      };
+
+      timedRecords.forEach(r => container.insertAdjacentHTML('beforeend', drawRow(r)));
+
+      if (untimedRecords.length > 0) {
+        const dividerHtml = `<div class="bg-rose-50 p-1.5 text-center text-[11px] font-bold text-rose-400 sticky-col w-full z-20 border-b border-t border-rose-100 mt-2 shadow-sm">종일 및 시간 미지정 복무자</div>`;
+        container.insertAdjacentHTML('beforeend', dividerHtml);
+        untimedRecords.forEach(r => container.insertAdjacentHTML('beforeend', drawRow(r)));
+      }
+
+      lucide.createIcons();
+    }
+
+    function parsePeriodToForm(periodStr) {
+      const dateMatch = safeStr(periodStr).match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+      const times = safeStr(periodStr).match(/\d{2}:\d{2}/g) || [];
+      return {
+        date: dateMatch ? `${dateMatch[1]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[3].padStart(2,'0')}` : currentActiveDateString,
+        sh: times[0] ? times[0].slice(0,2) : '',
+        sm: times[0] ? times[0].slice(3,5) : '',
+        eh: times[1] ? times[1].slice(0,2) : '',
+        em: times[1] ? times[1].slice(3,5) : ''
+      };
+    }
+
+    function buildPeriodString(date, sh, sm, eh, em) {
+      if (sh && sm && eh && em) {
+        return `${date} ${sh}:${sm} ~ ${date} ${eh}:${em}`;
+      }
+      return date;
+    }
+
+    window.openEditModal = function(recordId) {
+      const record = todayRecords.find(r => safeStr(r['레코드ID'] || r.recordId) === recordId);
+      if (!record) {
+        showToast('수정할 데이터를 찾지 못했습니다.');
+        return;
+      }
+
+      const parsed = parsePeriodToForm(safeStr(record['기간'] || record.period));
+      document.getElementById('e-record-id').value = recordId;
+      document.getElementById('e-name').value = safeStr(record['성명'] || record.name);
+      document.getElementById('e-role').value = safeStr(record['직급/직위/직종'] || record.role);
+      document.getElementById('e-type').value = safeStr(record['근무상황'] || record.type);
+      document.getElementById('e-note').value = safeStr(record['목적지/비고'] || record.note);
+      document.getElementById('e-date').value = parsed.date;
+      document.getElementById('e-start-h').value = parsed.sh;
+      document.getElementById('e-start-m').value = parsed.sm;
+      document.getElementById('e-end-h').value = parsed.eh;
+      document.getElementById('e-end-m').value = parsed.em;
+      document.getElementById('edit-modal').classList.remove('hidden');
+      document.getElementById('edit-modal').classList.add('flex');
+      lucide.createIcons();
+    };
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+      document.getElementById('edit-modal').classList.remove('flex');
+    }
+
+    document.getElementById('edit-manual-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!adminToken) {
+        showToast('관리자 인증이 필요합니다.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-save-edit');
+      btn.disabled = true;
+      btn.innerText = '저장 중...';
+
+      const recordId = document.getElementById('e-record-id').value;
+      const period = buildPeriodString(
+        document.getElementById('e-date').value,
+        document.getElementById('e-start-h').value,
+        document.getElementById('e-start-m').value,
+        document.getElementById('e-end-h').value,
+        document.getElementById('e-end-m').value
+      );
+
+      const payloadData = {
+        role: document.getElementById('e-role').value || '교직원',
+        name: document.getElementById('e-name').value,
+        type: document.getElementById('e-type').value,
+        note: document.getElementById('e-note').value,
+        period
+      };
+
+      const idx = todayRecords.findIndex(r => safeStr(r['레코드ID'] || r.recordId) === recordId);
+      if (idx > -1) {
+        todayRecords[idx] = {
+          ...todayRecords[idx],
+          '직급/직위/직종': payloadData.role,
+          '성명': payloadData.name,
+          '근무상황': payloadData.type,
+          '목적지/비고': payloadData.note,
+          '기간': payloadData.period,
+          '레코드ID': recordId,
+          '입력경로': '수기입력'
+        };
+      }
+      renderTimeline();
+      updateClock();
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'updateManual', token: adminToken, recordId, data: payloadData })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('수기 입력이 수정되었습니다.');
+          closeEditModal();
+          fetchGASData();
+        } else if (data.status === 'unauthorized') {
+          showToast('인증이 만료되었습니다. 다시 로그인해 주세요.');
+          logoutAdmin();
+        } else {
+          showToast('수정 저장에 실패했습니다.');
+        }
+      } catch (err) {
+        showToast('수정 저장 중 오류가 발생했습니다.');
+      }
+
+      btn.disabled = false;
+      btn.innerText = '수정 저장';
+      lucide.createIcons();
+    });
+
+    document.getElementById('file-upload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          const headerStr = (rows[0] ? rows[0].join('') : '') + (rows[1] ? rows[1].join('') : '');
+          if (!headerStr.includes('성명') || !headerStr.includes('근무상황')) {
+            showToast('잘못된 양식입니다. 원본 엑셀 파일을 업로드해주세요.');
+            document.getElementById('file-upload').value = '';
+            return;
+          }
+
+          parsedFileData = [];
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || !Array.isArray(row) || row.length < 4) continue;
+            const nameStr = safeStr(row[3]).trim();
+            if (!nameStr || nameStr === '성명') continue;
+
+            let periodVal = safeStr(row[6]).trim();
+            if (!periodVal) periodVal = currentActiveDateString;
+
+            parsedFileData.push({
+              role: safeStr(row[2]).trim(),
+              name: nameStr,
+              type: safeStr(row[4]).trim(),
+              note: safeStr(row[5]).trim(),
+              period: periodVal
+            });
+          }
+
+          if (parsedFileData.length > 0) {
+            document.getElementById('file-info').classList.remove('hidden');
+            document.getElementById('file-count').innerText = parsedFileData.length;
+            showToast(`${parsedFileData.length}건 파싱 성공! [현황판에 반영]을 눌러주세요.`);
+          } else {
+            showToast('유효한 데이터가 없습니다.');
+          }
+        } catch (err) {
+          showToast('파일을 읽는 중 오류가 발생했습니다.');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('btn-sync-file').addEventListener('click', async () => {
+      if (parsedFileData.length === 0) return;
+      if (!adminToken) {
+        showToast('관리자 인증이 필요합니다.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-sync-file');
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> 반영 중...';
+      btn.disabled = true;
+
+      todayRecords = todayRecords.filter(r => safeStr(r['입력경로'] || r.source) === '수기입력');
+      const existingSet = new Set(todayRecords.map(r => `${safeStr(r['성명'])}|${safeStr(r['근무상황'])}|${safeStr(r['기간'])}`));
+
+      parsedFileData.forEach(d => {
+        const key = `${d.name}|${d.type}|${d.period}`;
+        if (!existingSet.has(key)) {
+          todayRecords.push({
+            '성명': d.name,
+            '직급/직위/직종': d.role,
+            '근무상황': d.type,
+            '목적지/비고': d.note,
+            '기간': d.period,
+            '입력경로': '파일업로드',
+            '레코드ID': 'file-' + Math.random().toString(36).slice(2)
+          });
+          existingSet.add(key);
+        }
+      });
+
+      document.getElementById('file-info').classList.add('hidden');
+      renderTimeline();
+      showToast('화면에 선반영 되었습니다. 서버 전송 중...');
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'syncFile', token: adminToken, todayStr: currentActiveDateString, data: parsedFileData })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('엑셀 데이터가 구글 시트에 안전하게 반영되었습니다.');
+          fetchGASData();
+        } else if (data.status === 'unauthorized') {
+          showToast('인증이 만료되었습니다. 다시 로그인해 주세요.');
+          logoutAdmin();
+        } else {
+          showToast('엑셀 서버 전송 실패');
+        }
+      } catch (error) {
+        showToast('엑셀 서버 전송 실패. 네트워크 확인이 필요합니다.');
+      }
+
+      parsedFileData = [];
+      btn.innerHTML = '☁️ 현황판에 반영';
+      btn.disabled = false;
+      lucide.createIcons();
+    });
+
+    window.deleteFileRecords = async function() {
+      if (!adminToken) {
+        showToast('관리자 인증이 필요합니다.');
+        return;
+      }
+      if (!confirm(`[${currentActiveDateString}] 기준으로 업로드된 엑셀 데이터를 모두 삭제하시겠습니까?\n(수기입력 데이터는 유지됩니다.)`)) return;
+
+      const btn = document.getElementById('btn-reset-excel');
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span class="hidden md:inline">지우는 중...</span>';
+
+      todayRecords = todayRecords.filter(r => safeStr(r['입력경로'] || r.source) !== '파일업로드');
+      renderTimeline();
+      showToast('엑셀 데이터를 지우는 중입니다...');
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'resetTodayExcel', token: adminToken, todayStr: currentActiveDateString })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast(`엑셀 데이터가 삭제되었습니다. (${data.deleted}건)`);
+          fetchGASData();
+        } else if (data.status === 'unauthorized') {
+          showToast('인증이 만료되었습니다. 다시 로그인해 주세요.');
+          logoutAdmin();
+        } else {
+          showToast('삭제 처리 응답을 확인할 수 없습니다.');
+        }
+      } catch (e) {
+        showToast('삭제 요청에 실패했습니다.');
+      }
+
+      btn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i> <span class="hidden md:inline">엑셀 리셋</span>';
+      lucide.createIcons();
+    };
+
+    window.deleteManualRecord = async function(recordId) {
+      if (!adminToken) {
+        showToast('관리자 인증이 필요합니다.');
+        return;
+      }
+      const target = todayRecords.find(r => safeStr(r['레코드ID'] || r.recordId) === recordId);
+      const name = target ? safeStr(target['성명'] || target.name) : '해당 사용자';
+      if (!confirm(`[${name}] 선생님의 수기 입력 데이터를 삭제하시겠습니까?`)) return;
+
+      todayRecords = todayRecords.filter(r => safeStr(r['레코드ID'] || r.recordId) !== recordId);
+      renderTimeline();
+      showToast('삭제 중입니다...');
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'deleteManual', token: adminToken, recordId })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('삭제되었습니다.');
+        } else if (data.status === 'unauthorized') {
+          showToast('인증이 만료되었습니다. 다시 로그인해 주세요.');
+          logoutAdmin();
+        } else {
+          showToast('삭제 대상이 서버에 없습니다.');
+        }
+      } catch (e) {
+        showToast('삭제 중 오류가 발생했습니다.');
+      }
+    };
+
+    document.getElementById('teacher-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-teacher');
+      btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-5 h-5"></i> 전송 중...';
+      btn.disabled = true;
+
+      const targetDate = document.getElementById('t-date').value;
+      const sh = document.getElementById('t-start-h').value;
+      const sm = document.getElementById('t-start-m').value;
+      const eh = document.getElementById('t-end-h').value;
+      const em = document.getElementById('t-end-m').value;
+      const periodStr = buildPeriodString(targetDate, sh, sm, eh, em);
+      const tempId = 'manual-' + Date.now();
+
+      const payloadData = {
+        role: document.getElementById('t-dept').value || '교직원',
+        name: document.getElementById('t-name').value,
+        type: document.getElementById('t-type').value,
+        note: document.getElementById('t-reason').value,
+        period: periodStr
+      };
+
+      todayRecords.push({
+        '성명': payloadData.name,
+        '직급/직위/직종': payloadData.role,
+        '근무상황': payloadData.type,
+        '기간': payloadData.period,
+        '목적지/비고': payloadData.note,
+        '입력경로': '수기입력',
+        '레코드ID': tempId
+      });
+
+      document.getElementById('teacher-form').reset();
+      document.getElementById('t-date').value = getRealTodayString();
+      switchView('view-landing');
+      showToast('화면에 반영되었습니다. 시트로 전송 중...');
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'addManual', data: payloadData })
+        });
+        const data = await res.json();
+        if (data.status === 'success' && data.recordId) {
+          const idx = todayRecords.findIndex(r => safeStr(r['레코드ID']) === tempId);
+          if (idx > -1) todayRecords[idx]['레코드ID'] = data.recordId;
+          showToast('수기 데이터가 시트에 저장되었습니다.');
+        } else {
+          showToast('수기 데이터 저장 응답을 확인하지 못했습니다.');
+        }
+      } catch (error) {
+        showToast('시트 저장 중 오류가 발생했습니다.');
+      }
+
+      btn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> 현황판에 전송하기';
+      btn.disabled = false;
+      lucide.createIcons();
+    });
+
+    async function fetchGASData() {
+      if (!adminToken) {
+        renderTimeline();
+        return;
+      }
+
+      const icon = document.getElementById('icon-refresh');
+      if (icon) icon.classList.add('animate-spin');
+
+      try {
+        const res = await fetch(`${GAS_URL}?mode=data&token=${encodeURIComponent(adminToken)}`, { cache: 'no-store' });
+        const data = await res.json();
+
+        if (data && data.status === 'unauthorized') {
+          showToast('관리자 인증이 만료되었습니다. 다시 로그인해 주세요.');
+          logoutAdmin();
+          return;
+        }
+
+        if (Array.isArray(data)) {
+          todayRecords = data.filter(item => {
+            const pStr = safeStr(item['기간'] || item.period);
+            if (pStr === '') {
+              const uploadTime = safeStr(item['시트입력시간'] || item.uploadTime);
+              const match = uploadTime.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+              if (match) {
+                const uDate = `${match[1]}-${match[2].padStart(2,'0')}-${match[3].padStart(2,'0')}`;
+                return uDate === currentActiveDateString;
+              }
+              return getRealTodayString() === currentActiveDateString;
+            }
+            return isCoveringDate(pStr, currentActiveDateString);
+          });
+        }
+        showToast('스프레드시트 데이터를 동기화했습니다.');
+      } catch (err) {
+        showToast('데이터 동기화 중 오류가 발생했습니다.');
+      }
+
+      if (icon) icon.classList.remove('animate-spin');
+      renderTimeline();
+      updateClock();
+    }
+
+    populateTestTimeDropdown();
+    initGrid();
+    updateFilterUI();
+    setInterval(updateClock, 1000);
+
+  </script>
+</body>
+</html>
