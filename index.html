@@ -178,6 +178,9 @@
           <h1 class="text-lg md:text-xl font-bold tracking-tight">홍북초등학교 근무 현황판</h1>
         </div>
         <div class="flex items-center gap-2 md:gap-4">
+          <button onclick="openAddModal()" class="bg-white text-rose-400 hover:bg-rose-50 px-3 md:px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 shadow" title="대시보드에서 직접 추가">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> <span class="hidden md:inline">복무 추가</span>
+          </button>
           <button onclick="document.getElementById('file-upload').click()" class="bg-rose-500 hover:bg-rose-400 px-3 md:px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 shadow" title="나이스 엑셀 업로드">
             <i data-lucide="upload" class="w-4 h-4"></i> <span class="hidden md:inline">엑셀 업로드</span>
             <input type="file" accept=".csv, .xlsx, .xls" id="file-upload" class="hidden">
@@ -226,17 +229,35 @@
           </div>
         </div>
 
-        <div class="flex flex-col items-end min-w-max bg-white p-3 md:p-4 rounded-xl shadow-sm border border-rose-100">
-          <div class="flex items-center gap-1 mb-1">
-            <span class="text-[10px] font-bold text-rose-400 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">테스트 설정</span>
-            <input type="date" id="test-date-input" onchange="onTestChange()" class="text-xs p-0.5 rounded border border-rose-100 outline-none text-slate-600 font-mono bg-white h-6">
-            <select id="test-time-select" onchange="onTestChange()" class="text-xs p-0.5 rounded border border-rose-100 outline-none text-slate-600 font-mono bg-white h-6">
-              <option value="">- 시간 -</option>
-            </select>
-            <button onclick="resetTest()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-600 px-1.5 py-0.5 h-6 rounded transition-colors">초기화</button>
+        <div class="w-full md:w-auto min-w-[360px] bg-gradient-to-br from-white via-rose-50/80 to-violet-50 p-4 md:p-5 rounded-[24px] shadow-sm border border-rose-100">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="inline-flex items-center gap-2 text-[11px] font-black text-rose-500 bg-gradient-to-r from-rose-50 to-pink-50 px-3 py-1.5 rounded-full border border-rose-100 shadow-sm">
+              <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+              테스트 설정
+            </div>
+            <div class="flex items-center gap-2 flex-wrap justify-end">
+              <input type="date" id="test-date-input" onchange="onTestChange()" class="text-sm px-3 py-1.5 rounded-2xl border border-sky-100 outline-none text-slate-600 font-mono bg-white h-10 shadow-sm">
+              <select id="test-time-select" onchange="onTestChange()" class="text-sm px-3 py-1.5 rounded-2xl border border-violet-100 outline-none text-slate-600 font-mono bg-white h-10 shadow-sm">
+                <option value="">- 시간 -</option>
+              </select>
+              <button onclick="resetTest()" class="text-[11px] bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-600 px-3 py-2 rounded-2xl transition-colors font-black border border-amber-100 shadow-sm">초기화</button>
+            </div>
           </div>
-          <div id="clock-date" class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">YYYY-MM-DD</div>
-          <div id="clock-time" class="text-3xl font-maple font-black text-rose-400 tracking-tighter leading-none mt-1 drop-shadow-sm">00:00:00</div>
+
+          <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 md:gap-5 items-end">
+            <div class="rounded-2xl bg-gradient-to-r from-sky-50 via-white to-emerald-50 border border-sky-100 px-4 py-3">
+              <div class="text-[12px] font-black text-sky-500 mb-1">기준 날짜</div>
+              <div id="clock-date" class="text-[32px] md:text-[40px] leading-none font-black text-slate-700 tracking-tight">YYYY-MM-DD (월)</div>
+              <div class="mt-2 text-[12px] font-black text-emerald-500">현재 표시 기준일</div>
+            </div>
+
+            <div class="rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-violet-50 border border-pink-100 px-4 py-3 text-right md:min-w-[290px]">
+              <div class="text-[12px] font-black text-violet-500 mb-1">현재 시각</div>
+              <div class="flex justify-end">
+                <div id="clock-time" class="w-[250px] text-[34px] md:text-[40px] font-maple font-black text-rose-400 leading-none drop-shadow-sm text-right tabular-nums whitespace-nowrap">00:00:00</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -274,7 +295,92 @@
   </div>
 
 
-  <div id="edit-modal" class="fixed inset-0 bg-slate-900/35 backdrop-blur-sm z-[1100] hidden items-center justify-center p-4">
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/35 backdrop-blur-sm z-[1100] hidden items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-white rounded-[2rem] p-6 md:p-8 border border-rose-100 soft-card">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="text-2xl font-black text-slate-800">관리자 수기 입력 추가</h3>
+          <p class="text-sm text-slate-500">대시보드에서 바로 복무 현황을 추가할 수 있습니다.</p>
+        </div>
+        <button onclick="closeAddModal()" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
+          <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+        </button>
+      </div>
+
+      <form id="dashboard-add-form" class="space-y-5">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">성명</label>
+            <input type="text" id="a-name" required class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">소속 / 직위</label>
+            <input type="text" id="a-role" class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">복무 날짜</label>
+            <input type="date" id="a-date" required class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">복무 종류</label>
+            <select id="a-type" class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800">
+              <option value="관내출장">관내출장</option><option value="관외출장">관외출장</option>
+              <option value="학습연수">학습연수</option><option value="41조연수">41조연수</option>
+              <option value="조퇴">조퇴</option><option value="외출">외출</option><option value="지각">지각</option>
+              <option value="연가">연가</option><option value="병가">병가</option><option value="공가">공가</option>
+              <option value="특별휴가">특별휴가</option><option value="육아시간">육아시간</option><option value="모성보호시간">모성보호시간</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">시작 시간</label>
+            <div class="flex gap-2">
+              <select id="a-start-h" class="w-full p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                <option value="">- 시 -</option>
+                <option value="08">08시</option><option value="09">09시</option><option value="10">10시</option>
+                <option value="11">11시</option><option value="12">12시</option><option value="13">13시</option>
+                <option value="14">14시</option><option value="15">15시</option><option value="16">16시</option>
+              </select>
+              <select id="a-start-m" class="w-full p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                <option value="">- 분 -</option>
+                <option value="00">00분</option><option value="10">10분</option><option value="20">20분</option>
+                <option value="30">30분</option><option value="40">40분</option><option value="50">50분</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">종료 시간</label>
+            <div class="flex gap-2">
+              <select id="a-end-h" class="w-full p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                <option value="">- 시 -</option>
+                <option value="08">08시</option><option value="09">09시</option><option value="10">10시</option>
+                <option value="11">11시</option><option value="12">12시</option><option value="13">13시</option>
+                <option value="14">14시</option><option value="15">15시</option><option value="16">16시</option>
+              </select>
+              <select id="a-end-m" class="w-full p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-bold text-slate-800 text-center">
+                <option value="">- 분 -</option>
+                <option value="00">00분</option><option value="10">10분</option><option value="20">20분</option>
+                <option value="30">30분</option><option value="40">40분</option><option value="50">50분</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">상세 사유 / 행선지</label>
+          <input type="text" id="a-note" class="w-full p-4 rounded-xl bg-rose-50/70 border border-rose-200 outline-none focus:border-rose-300 font-medium">
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeAddModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black py-4 rounded-xl transition-colors">취소</button>
+          <button type="submit" id="btn-save-add" class="flex-1 bg-rose-300 hover:bg-rose-400 text-white font-black py-4 rounded-xl transition-colors">추가 저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<div id="edit-modal" class="fixed inset-0 bg-slate-900/35 backdrop-blur-sm z-[1100] hidden items-center justify-center p-4">
     <div class="w-full max-w-2xl bg-white rounded-[2rem] p-6 md:p-8 border border-rose-100 soft-card">
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -411,6 +517,43 @@
       return typeof val === 'string' ? val : (val ? String(val) : '');
     }
 
+    function normalizeRawPeriodKey(periodStr) {
+      return safeStr(periodStr)
+        .replace(/\([^)]*\)/g, '')
+        .replace(/\s/g, '')
+        .replace(/[~～]/g, '~');
+    }
+
+    function getUploadDateKey(record) {
+      const uploadTime = safeStr(record?.['시트입력시간'] || record?.uploadTime || record?._uploadDate || '');
+      const match = uploadTime.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+      if (match) {
+        return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+      }
+      return currentActiveDateString;
+    }
+
+    function buildRecordDedupeKey(record) {
+      const nameKey = safeStr(record?.['성명'] || record?.name).replace(/\s/g, '');
+      const period = safeStr(record?.['기간'] || record?.period).trim();
+      const periodKey = period ? normalizeRawPeriodKey(period) : `BLANK:${getUploadDateKey(record)}`;
+      return `${nameKey}|${periodKey}`;
+    }
+
+    function normalizeRecordForView(item) {
+      const cloned = { ...item };
+      cloned._uploadDate = getUploadDateKey(cloned);
+      return cloned;
+    }
+
+    function recordMatchesActiveDate(record, activeDate) {
+      const period = safeStr(record?.['기간'] || record?.period).trim();
+      if (!period) {
+        return getUploadDateKey(record) === activeDate;
+      }
+      return isCoveringDate(period, activeDate);
+    }
+
     function syncScroll() {
       const bodyScroll = document.getElementById('timeline-body-scroll');
       const headerScroll = document.getElementById('timeline-header-scroll');
@@ -514,18 +657,23 @@
 
     function getProcessedRecords() {
       const uniqueMap = new Map();
+
       todayRecords.forEach(r => {
-        const key = `${safeStr(r['성명'] || r.name)}_${safeStr(r['근무상황'] || r.type)}_${safeStr(r['기간'] || r.period)}_${safeStr(r['레코드ID'] || r.recordId)}`;
-        if (!uniqueMap.has(key)) uniqueMap.set(key, r);
+        const dedupeKey = buildRecordDedupeKey(r);
+        if (!uniqueMap.has(dedupeKey)) {
+          uniqueMap.set(dedupeKey, r);
+        }
       });
 
       const distinctRecords = Array.from(uniqueMap.values());
       const processed = [];
+
       distinctRecords.forEach(r => {
         const name = safeStr(r['성명'] || r.name);
         const type = safeStr(r['근무상황'] || r.type);
         const cat = getCategory(type);
-        const times = extractTimesForToday(r['기간'] || r.period, currentActiveDateString, type);
+        const rawPeriod = safeStr(r['기간'] || r.period);
+        const times = extractTimesForToday(rawPeriod, currentActiveDateString, type);
         const isUntimed = !times.start && !times.end;
 
         let sMins = times.start ? timeToMins(times.start) : START_MINS;
@@ -544,10 +692,12 @@
             _name: name,
             _isUntimed: isUntimed,
             _times: times,
-            _recordId: safeStr(r['레코드ID'] || r.recordId)
+            _recordId: safeStr(r['레코드ID'] || r.recordId),
+            _displayTime: isUntimed ? (rawPeriod.trim() ? '종일' : '시간미지정') : `${times.start} ~ ${times.end}`
           });
         }
       });
+
       return processed;
     }
 
@@ -782,7 +932,7 @@
           : '';
 
         const displayLabel = note ? `${type} (${note})` : type;
-        const timeDisplay = r._isUntimed ? '종일' : `${r._times.start} ~ ${r._times.end}`;
+        const timeDisplay = r._displayTime;
 
         return `
           <div class="flex border-b border-rose-50 hover:bg-white/50 transition-colors h-11 relative w-full">
@@ -861,6 +1011,80 @@
       document.getElementById('edit-modal').classList.add('hidden');
       document.getElementById('edit-modal').classList.remove('flex');
     }
+
+    window.openAddModal = function() {
+      document.getElementById('dashboard-add-form').reset();
+      document.getElementById('a-date').value = currentActiveDateString;
+      document.getElementById('add-modal').classList.remove('hidden');
+      document.getElementById('add-modal').classList.add('flex');
+      lucide.createIcons();
+    };
+
+    function closeAddModal() {
+      document.getElementById('add-modal').classList.add('hidden');
+      document.getElementById('add-modal').classList.remove('flex');
+    }
+
+    document.getElementById('dashboard-add-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-save-add');
+      btn.disabled = true;
+      btn.innerText = '저장 중...';
+
+      const periodStr = buildPeriodString(
+        document.getElementById('a-date').value,
+        document.getElementById('a-start-h').value,
+        document.getElementById('a-start-m').value,
+        document.getElementById('a-end-h').value,
+        document.getElementById('a-end-m').value
+      );
+      const tempId = 'manual-admin-' + Date.now();
+
+      const payloadData = {
+        role: document.getElementById('a-role').value || '교직원',
+        name: document.getElementById('a-name').value,
+        type: document.getElementById('a-type').value,
+        note: document.getElementById('a-note').value,
+        period: periodStr
+      };
+
+      todayRecords.push({
+        '성명': payloadData.name,
+        '직급/직위/직종': payloadData.role,
+        '근무상황': payloadData.type,
+        '기간': payloadData.period,
+        '목적지/비고': payloadData.note,
+        '입력경로': '수기입력',
+        '레코드ID': tempId
+      });
+
+      renderTimeline();
+      updateClock();
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'addManual', data: payloadData })
+        });
+        const data = await res.json();
+        if (data.status === 'success' && data.recordId) {
+          const idx = todayRecords.findIndex(r => safeStr(r['레코드ID']) === tempId);
+          if (idx > -1) todayRecords[idx]['레코드ID'] = data.recordId;
+          showToast('대시보드에서 복무가 추가되었습니다.');
+          closeAddModal();
+          fetchGASData();
+        } else {
+          showToast('수기 데이터 저장 응답을 확인하지 못했습니다.');
+        }
+      } catch (error) {
+        showToast('시트 저장 중 오류가 발생했습니다.');
+      }
+
+      btn.disabled = false;
+      btn.innerText = '추가 저장';
+      lucide.createIcons();
+    });
 
     document.getElementById('edit-manual-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -958,15 +1182,15 @@
             const nameStr = safeStr(row[3]).trim();
             if (!nameStr || nameStr === '성명') continue;
 
-            let periodVal = safeStr(row[6]).trim();
-            if (!periodVal) periodVal = currentActiveDateString;
+            const periodVal = safeStr(row[6]).trim();
 
             parsedFileData.push({
               role: safeStr(row[2]).trim(),
               name: nameStr,
               type: safeStr(row[4]).trim(),
               note: safeStr(row[5]).trim(),
-              period: periodVal
+              period: periodVal,
+              uploadDate: currentActiveDateString
             });
           }
 
@@ -997,20 +1221,25 @@
       btn.disabled = true;
 
       todayRecords = todayRecords.filter(r => safeStr(r['입력경로'] || r.source) === '수기입력');
-      const existingSet = new Set(todayRecords.map(r => `${safeStr(r['성명'])}|${safeStr(r['근무상황'])}|${safeStr(r['기간'])}`));
+
+      const existingSet = new Set(todayRecords.map(r => buildRecordDedupeKey(r)));
 
       parsedFileData.forEach(d => {
-        const key = `${d.name}|${d.type}|${d.period}`;
+        const localRecord = {
+          '성명': d.name,
+          '직급/직위/직종': d.role,
+          '근무상황': d.type,
+          '목적지/비고': d.note,
+          '기간': d.period,
+          '입력경로': '파일업로드',
+          '레코드ID': 'file-' + Math.random().toString(36).slice(2),
+          '_uploadDate': d.uploadDate || currentActiveDateString,
+          '시트입력시간': d.uploadDate || currentActiveDateString
+        };
+        const key = buildRecordDedupeKey(localRecord);
+
         if (!existingSet.has(key)) {
-          todayRecords.push({
-            '성명': d.name,
-            '직급/직위/직종': d.role,
-            '근무상황': d.type,
-            '목적지/비고': d.note,
-            '기간': d.period,
-            '입력경로': '파일업로드',
-            '레코드ID': 'file-' + Math.random().toString(36).slice(2)
-          });
+          todayRecords.push(localRecord);
           existingSet.add(key);
         }
       });
@@ -1196,19 +1425,9 @@
         }
 
         if (Array.isArray(data)) {
-          todayRecords = data.filter(item => {
-            const pStr = safeStr(item['기간'] || item.period);
-            if (pStr === '') {
-              const uploadTime = safeStr(item['시트입력시간'] || item.uploadTime);
-              const match = uploadTime.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
-              if (match) {
-                const uDate = `${match[1]}-${match[2].padStart(2,'0')}-${match[3].padStart(2,'0')}`;
-                return uDate === currentActiveDateString;
-              }
-              return getRealTodayString() === currentActiveDateString;
-            }
-            return isCoveringDate(pStr, currentActiveDateString);
-          });
+          todayRecords = data
+            .map(item => normalizeRecordForView(item))
+            .filter(item => recordMatchesActiveDate(item, currentActiveDateString));
         }
         showToast('스프레드시트 데이터를 동기화했습니다.');
       } catch (err) {
